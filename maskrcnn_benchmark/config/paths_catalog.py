@@ -103,6 +103,14 @@ class DatasetCatalog(object):
         "cityscapes_fine_instanceonly_seg_test_cocostyle": {
             "img_dir": "cityscapes/images",
             "ann_file": "cityscapes/annotations/instancesonly_filtered_gtFine_test.json"
+        },
+        "modanet_train_cocostyle": {
+            "img_dir": "modanet/images/train",
+            "ann_file": "modanet/annotations/modanet2018_instances_train.json"
+        },
+        "modanet_val_cocostyle": {
+            "img_dir": "modanet/images/val",
+            "ann_file": "modanet/annotations/modanet2018_instances_val.json"
         }
     }
 

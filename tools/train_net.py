@@ -59,12 +59,16 @@ def train(cfg, local_rank, distributed):
         is_distributed=distributed,
         start_iter=arguments["iteration"],
     )
+    # warning: not sure why I need to index here
+    data_loader_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)[0]
 
     checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
 
     do_train(
+        cfg,
         model,
         data_loader,
+        data_loader_val,
         optimizer,
         scheduler,
         checkpointer,
