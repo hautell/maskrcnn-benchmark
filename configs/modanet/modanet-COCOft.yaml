@@ -1,8 +1,8 @@
 MODEL:
   META_ARCHITECTURE: "GeneralizedRCNN"
-  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-101"
+  WEIGHT: "/home/ubuntu/maskrcnn-benchmark/mask_rcnn_R-50-FPN_1x_detectron_no_last_layers.pth"
   BACKBONE:
-    CONV_BODY: "R-101-FPN"
+    CONV_BODY: "R-50-FPN"
   RESNETS:
     BACKBONE_OUT_CHANNELS: 256
   RPN:
@@ -36,11 +36,11 @@ DATASETS:
 DATALOADER:
   SIZE_DIVISIBILITY: 32
 SOLVER:
-  IMS_PER_BATCH: 2
-  BASE_LR: 0.0025
+  IMS_PER_BATCH: 4
+  BASE_LR: 0.005
   WEIGHT_DECAY: 0.0001
-  STEPS: (480000, 640000)
-  MAX_ITER: 720000
+  STEPS: (77000, 99000)
+  MAX_ITER: 110000
 TEST:
     IMS_PER_BATCH: 1
-OUTPUT_DIR: './modanet/'
+OUTPUT_DIR: './modanet/COCOft'
