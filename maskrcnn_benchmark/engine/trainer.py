@@ -130,15 +130,19 @@ def do_train(
             )
             writer.add_scalar('lr', optimizer.param_groups[0]["lr"], iteration)
             writer.add_scalar('loss-median', getattr(meters, 'loss').median, iteration)
-            writer.add_scalar('loss-global_avg', getattr(meters, 'loss').global_avg, iteration)
             writer.add_scalar('val_loss-median', getattr(meters, 'val_loss').median, iteration)
-            writer.add_scalar('val_loss-global_avg', getattr(meters, 'val_loss').global_avg, iteration)
+            writer.add_scalar('loss_classifier-median', getattr(meters, 'loss_classifier').median, iteration)
+            writer.add_scalar('loss_box_reg-median', getattr(meters, 'loss_box_reg').median, iteration)
+            writer.add_scalar('loss_mask-median', getattr(meters, 'loss_mask').median, iteration)
+            writer.add_scalar('loss_objectness-median', getattr(meters, 'loss_objectness').median, iteration)
+            writer.add_scalar('loss_rpn_box_reg-median', getattr(meters, 'loss_rpn_box_reg').median, iteration)
+            
         if iteration % checkpoint_period == 0:
             checkpointer.save("model_{:07d}".format(iteration), **arguments)
         if iteration == max_iter:
             checkpointer.save("model_final", **arguments)
 
-        if iteration % 2000 == 0 :
+        if iteration % 5000 == 0 :
             model.eval()
             for f in val_eval_files :
                 image = cv2.imread(f)

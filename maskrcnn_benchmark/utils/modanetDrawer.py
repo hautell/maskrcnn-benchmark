@@ -34,7 +34,7 @@ class ModaNetDrawer(object):
         self,
         cfg,
         model,
-        confidence_threshold=0.7,
+        confidence_threshold=0.5,
         show_mask_heatmaps=False,
         masks_per_dim=2,
         min_image_size=224,
