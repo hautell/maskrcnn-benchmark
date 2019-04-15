@@ -1,5 +1,5 @@
 from maskrcnn_benchmark.config import cfg
-from demo.predictor import COCODemo
+from maskrcnn_benchmark.utils.modanetDrawer import ModaNetDrawer
 import argparse
 from PIL import Image
 import numpy as np
@@ -24,7 +24,6 @@ args = parser.parse_args()
 cfg.merge_from_file(args.config_file)
 cfg.merge_from_list(args.opts)
 # manual override some options
-cfg.merge_from_list(["MODEL.DEVICE", "cpu"])
 
 coco_demo = COCODemo(
     cfg,
