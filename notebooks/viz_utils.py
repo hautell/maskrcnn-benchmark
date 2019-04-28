@@ -5,6 +5,7 @@ from skimage.measure import label, regionprops, find_contours
 from matplotlib.patches import Polygon
 from matplotlib import patches,  lines
 import matplotlib.pyplot as plt
+from maskrcnn_benchmark.structures.segmentation_mask import SegmentationMask
 
 def random_colors(N, bright=True):
     """
@@ -121,7 +122,7 @@ def rleToMask(rleString,height,width):
   img = np.zeros(rows*cols,dtype=np.uint8)
   for index,length in rlePairs:
     index -= 1
-    img[index:index+length] = 255
+    img[index:index+length] = 1
   img = img.reshape(cols,rows)
   img = img.T
   return img
@@ -139,3 +140,23 @@ def makeBBox(mask) :
         x2 = max(x2, maxc)
     bbox = np.array([y1, x1, y2, x2])
     return bbox
+
+def viz_coco_example(img, imginfo, annotations, classnames) :
+    height, width = imginfo['height'], imginfo['width']
+    assert(img.shape[0] == height)
+    assert(img.shape[1] == width)
+    masks = SegmentationMask([ann['segmentation'] for ann in annotations], size=(width, height), mode='poly')
+    bboxes = []
+    classids = []
+    for ann in annotations :
+        x, y, width, height = ann['bbox']
+        x1, y1, x2, y2 = x, y, x+width, y+height
+        bboxes.append([y1, x1, y2, x2])
+        classids.append(ann['category_id']-1) # category_ids are 1-indexed in COCO datasets
+    classids = np.array(list(map(int, classids)))
+    bboxes = np.stack(bboxes, axis=0)
+    masks = masks.get_mask_tensor().numpy()
+    if masks.ndim == 2 :
+        masks = masks[np.newaxis, :, :]
+    masks = np.transpose(masks, (1, 2, 0))
+    display_instances(img, boxes=bboxes, masks=masks, class_ids=classids, class_names=classnames)
