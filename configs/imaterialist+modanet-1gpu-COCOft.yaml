@@ -1,8 +1,8 @@
 MODEL:
   META_ARCHITECTURE: "GeneralizedRCNN"
-  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-101"
+  WEIGHT: "/home/ubuntu/maskrcnn-benchmark/mask_rcnn_R-50-FPN_1x_detectron_no_last_layers.pth"
   BACKBONE:
-    CONV_BODY: "R-101-FPN"
+    CONV_BODY: "R-50-FPN"
   RESNETS:
     BACKBONE_OUT_CHANNELS: 256
   RPN:
@@ -20,7 +20,7 @@ MODEL:
     POOLER_SAMPLING_RATIO: 2
     FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
     PREDICTOR: "FPNPredictor"
-    NUM_CLASSES: 14
+    NUM_CLASSES: 12
   ROI_MASK_HEAD:
     POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
     FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
@@ -31,16 +31,15 @@ MODEL:
     SHARE_BOX_FEATURE_EXTRACTOR: False
   MASK_ON: True
 DATASETS:
-  TRAIN: ("modanet_train_cocostyle",)
-  TEST: ("modanet_val_cocostyle",)
+  TRAIN: ("imaterialist_train_cocostyle", "modanet_train_cocostyle")
+  TEST: ("imaterialist_val_cocostyle", "modanet_val_cocostyle")
 DATALOADER:
   SIZE_DIVISIBILITY: 32
 SOLVER:
-  IMS_PER_BATCH: 2
   BASE_LR: 0.0025
   WEIGHT_DECAY: 0.0001
-  STEPS: (480000, 640000)
-  MAX_ITER: 720000
-TEST:
-    IMS_PER_BATCH: 1
-OUTPUT_DIR: './modanet/'
+  STEPS: (765000,)
+  MAX_ITER: 900000
+  IMS_PER_BATCH: 2 
+OUTPUT_DIR: '.'
+

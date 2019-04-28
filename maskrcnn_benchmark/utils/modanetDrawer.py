@@ -10,25 +10,12 @@ from maskrcnn_benchmark.modeling.roi_heads.mask_head.inference import Masker
 from maskrcnn_benchmark import layers as L
 from maskrcnn_benchmark.utils import cv2_util
 
+from maskrcnn_benchmark.utils.viz_utils import *
+from PIL import Image
+
 
 class ModaNetDrawer(object):
     # COCO categories for pretty print
-    CATEGORIES = [
-        "__background",
-        "bag",
-        "belt",
-        "boots",
-        "footwear",
-        "outer",
-        "dress",
-        "sunglasses",
-        "pants",
-        "top",
-        "shorts",
-        "skirt",
-        "headwear",
-        "scarf & tie"
-    ]
 
     def __init__(
         self,
@@ -62,6 +49,20 @@ class ModaNetDrawer(object):
         self.show_mask_heatmaps = show_mask_heatmaps
         self.masks_per_dim = masks_per_dim
 
+        self.categories = [
+            "__background",
+            "bag",
+            "belt",
+            "outer",
+            "dress",
+            "sunglasses",
+            "pants",
+            "top",
+            "shorts",
+            "skirt",
+            "headwear",
+            "scarf & tie"
+        ]
     def build_transform(self):
         """
         Creates a basic transformation that was used to train the models
@@ -105,6 +106,17 @@ class ModaNetDrawer(object):
         predictions = self.compute_prediction(image)
         top_predictions = self.select_top_predictions(predictions)
 
+        if top_predictions.bbox.shape[0] > 0 :
+            bboxes = top_predictions.bbox.numpy()
+            masks = top_predictions.get_field("mask").numpy()
+            labels = top_predictions.get_field("labels").numpy().astype(int)
+            masks = masks.squeeze(1).transpose((1,2,0))
+            _ = display_instances(image, bboxes, masks, labels, self.categories, filename='tmp.png')
+            result = np.array(Image.open('tmp.png'))
+            return result
+        else :
+            return image
+
         result = image.copy()
         if self.show_mask_heatmaps:
             return self.create_mask_montage(result, top_predictions)
@@ -137,7 +149,7 @@ class ModaNetDrawer(object):
         image_list = image_list.to(self.device)
         # compute predictions
         with torch.no_grad():
-            predictions = self.model(image_list)
+            predictions, _ = self.model(image_list)
         predictions = [o.to(self.cpu_device) for o in predictions]
 
         # always single image is passed at a time

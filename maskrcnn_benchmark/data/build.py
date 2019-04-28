@@ -52,7 +52,6 @@ def build_dataset(dataset_list, transforms, dataset_catalog, is_train=True):
     dataset = datasets[0]
     if len(datasets) > 1:
         dataset = D.ConcatDataset(datasets)
-
     return [dataset]
 
 

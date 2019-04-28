@@ -10,7 +10,7 @@ import random
 import torch
 import torch.distributed as dist
 
-from maskrcnn_benchmark.utils.comm import get_world_size
+from maskrcnn_benchmark.utils.comm import get_world_size, get_rank, synchronize
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
 from maskrcnn_benchmark.utils.modanetDrawer import ModaNetDrawer
 from tensorboardX import SummaryWriter
@@ -62,7 +62,7 @@ def do_train(
     start_training_time = time.time()
     end = time.time()
     val_loader_iter = iter(data_loader_val)
-    val_eval_files = random.sample(glob.glob('./datasets/modanet/images/val/*'), 200)
+    test_files = glob.glob(os.path.join(cfg.LOG.TEST_FOLDER, '*'))
 
     writer = SummaryWriter(log_dir=os.path.join(cfg.OUTPUT_DIR, 'logs'))
     drawer = ModaNetDrawer(cfg, model)
@@ -75,7 +75,6 @@ def do_train(
 
         images = images.to(device)
         targets = [target.to(device) for target in targets]
-
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
 
@@ -99,20 +98,21 @@ def do_train(
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
         # evaluate validation
-        eval_val = 20
-        if iteration % eval_val == 0 :
+        if iteration % cfg.TRAIN.EVAL_VAL_EVERY == 0 :
             try:
-                val_images, val_targets, _ = next(val_loader_iter)
+                images, targets, _ = next(val_loader_iter)
             except StopIteration:
                 val_loader_iter = iter(data_loader_val)
-                val_images, val_targets, _ = next(val_loader_iter)
-            val_images = val_images.to(device)
-            val_targets = [val_target.to(device) for val_target in val_targets]
-            loss_dict = model(val_images, val_targets)
+                images, targets, _ = next(val_loader_iter)
+            images = images.to(device)
+            targets = [target.to(device) for target in targets]
+            with torch.no_grad() :
+                loss_dict = model(images, targets)
+            loss_dict_reduced = reduce_loss_dict(loss_dict)
             losses_reduced = sum(loss for loss in loss_dict_reduced.values())
             meters.update(val_loss=losses_reduced, **loss_dict_reduced)
 
-        if iteration % 20 == 0 or iteration == max_iter:
+        if iteration % cfg.LOG.PRINT_EVERY == 0 or iteration == max_iter:
             logger.info(
                 meters.delimiter.join(
                     [
@@ -130,29 +130,35 @@ def do_train(
                     memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
                 )
             )
-            writer.add_scalar('lr', optimizer.param_groups[0]["lr"], iteration)
-            writer.add_scalar('loss-median', getattr(meters, 'loss').median, iteration)
-            writer.add_scalar('val_loss-median', getattr(meters, 'val_loss').median, iteration)
-            writer.add_scalar('loss_classifier-median', getattr(meters, 'loss_classifier').median, iteration)
-            writer.add_scalar('loss_box_reg-median', getattr(meters, 'loss_box_reg').median, iteration)
-            writer.add_scalar('loss_mask-median', getattr(meters, 'loss_mask').median, iteration)
-            writer.add_scalar('loss_objectness-median', getattr(meters, 'loss_objectness').median, iteration)
-            writer.add_scalar('loss_rpn_box_reg-median', getattr(meters, 'loss_rpn_box_reg').median, iteration)
+
+            if get_rank() == 0:
+                writer.add_scalar('lr', optimizer.param_groups[0]["lr"], iteration)
+                writer.add_scalar('loss-median', getattr(meters, 'loss').median, iteration)
+                writer.add_scalar('val_loss-median', getattr(meters, 'val_loss').median, iteration)
+                writer.add_scalar('loss_classifier-median', getattr(meters, 'loss_classifier').median, iteration)
+                writer.add_scalar('loss_box_reg-median', getattr(meters, 'loss_box_reg').median, iteration)
+                writer.add_scalar('loss_mask-median', getattr(meters, 'loss_mask').median, iteration)
+                writer.add_scalar('loss_objectness-median', getattr(meters, 'loss_objectness').median, iteration)
+                writer.add_scalar('loss_rpn_box_reg-median', getattr(meters, 'loss_rpn_box_reg').median, iteration)
             
         if iteration % checkpoint_period == 0:
             checkpointer.save("model_{:07d}".format(iteration), **arguments)
         if iteration == max_iter:
             checkpointer.save("model_final", **arguments)
 
-        if iteration % 5000 == 0 :
+        if get_rank() == 0 and iteration % cfg.LOG.SAVE_EVERY == 0 :
             model.eval()
-            for f in val_eval_files :
+            for f in test_files :
                 image = cv2.imread(f)
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 fileid = os.path.basename(f)
                 result = torch.tensor(drawer.run_on_opencv_image(image))
                 writer.add_image(f, result, iteration, dataformats='HWC')
             model.train()
+
+        torch.cuda.empty_cache()
+
+        synchronize()
 
     total_training_time = time.time() - start_training_time
     total_time_str = str(datetime.timedelta(seconds=total_training_time))

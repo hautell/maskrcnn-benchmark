@@ -440,6 +440,14 @@ _C.PATHS_CATALOG = os.path.join(os.path.dirname(__file__), "paths_catalog.py")
 # Precision options
 # ---------------------------------------------------------------------------- #
 
+_C.LOG = CN()
+_C.LOG.PRINT_EVERY = 20
+_C.LOG.TEST_FOLDER = '/data/runway2shop/all/'
+_C.LOG.SAVE_EVERY = 1000
+
+_C.TRAIN = CN()
+_C.TRAIN.EVAL_VAL_EVERY = 20
+
 # Precision of input, allowable: (float32, float16)
 _C.DTYPE = "float32"
 

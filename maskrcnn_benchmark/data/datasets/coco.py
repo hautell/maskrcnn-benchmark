@@ -43,12 +43,14 @@ class COCODataset(torchvision.datasets.coco.CocoDetection):
         super(COCODataset, self).__init__(root, ann_file)
         # sort indices for reproducible results
         self.ids = sorted(self.ids)
-
         # filter images without detection annotations
         if remove_images_without_annotations:
             ids = []
             for img_id in self.ids:
-                ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=None)
+                if isinstance(img_id, str) :
+                    ann_ids = self.coco.getAnnIds(imgIds=[img_id], iscrowd=None)
+                else :
+                    ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=None)
                 anno = self.coco.loadAnns(ann_ids)
                 if has_valid_annotation(anno):
                     ids.append(img_id)
