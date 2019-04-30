@@ -119,6 +119,10 @@ class DatasetCatalog(object):
         "imaterialist_val_cocostyle": {
             "img_dir": "imaterialist/images/val",
             "ann_file": "imaterialist/annotations/val_latest.json"
+        },
+        "farfetch_train_retrieval": {
+            "img_dir": "farfetch-scrape-v2/images/",
+            "ann_file": "farfetch-scrape-v2/product2category.json"
         }
     }
 
@@ -145,6 +149,17 @@ class DatasetCatalog(object):
             return dict(
                 factory="PascalVOCDataset",
                 args=args,
+            )
+        elif "retrieval" in name :
+            data_dir = DatasetCatalog.DATA_DIR
+            attrs = DatasetCatalog.DATASETS[name]
+            args = dict(
+                root=os.path.join(data_dir, attrs["img_dir"]),
+                ann_file=os.path.join(data_dir, attrs["ann_file"]),
+            )
+            return dict(
+                factory="RetrievalDataset",
+                args=args
             )
         raise RuntimeError("Dataset not available: {}".format(name))
 

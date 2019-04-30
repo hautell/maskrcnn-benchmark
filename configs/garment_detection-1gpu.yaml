@@ -31,8 +31,8 @@ MODEL:
     SHARE_BOX_FEATURE_EXTRACTOR: False
   MASK_ON: True
 DATASETS:
-  TRAIN: ("imaterialist_train_cocostyle",)
-  TEST: ("imaterialist_val_cocostyle",)
+  TRAIN: ("farfetch_train_retrieval",)
+  TEST: ("farfetch_train_retrieval",)
 DATALOADER:
   SIZE_DIVISIBILITY: 32
 SOLVER:

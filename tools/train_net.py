@@ -65,12 +65,7 @@ def train(cfg, local_rank, distributed):
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
 
-    data_loader = make_data_loader(
-        cfg,
-        is_train=True,
-        is_distributed=distributed,
-        start_iter=0,
-    )
+
     # warning: not sure why I need to index here
     data_loader_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)[0]
 
