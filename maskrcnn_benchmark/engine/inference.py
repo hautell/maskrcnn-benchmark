@@ -23,7 +23,7 @@ def compute_on_dataset(model, data_loader, device, timer=None):
         with torch.no_grad():
             if timer:
                 timer.tic()
-            output = model(images)
+            output, _ = model(images)
             if timer:
                 torch.cuda.synchronize()
                 timer.toc()

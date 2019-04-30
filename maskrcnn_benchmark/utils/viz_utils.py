@@ -114,7 +114,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
             ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
     if filename : 
-        plt.savefig('tmp.png', bbox_inches='tight', pad_inches=0)
+        plt.savefig(filename, bbox_inches='tight', pad_inches=0)
         plt.close()
     else :
         fig.canvas.draw()
