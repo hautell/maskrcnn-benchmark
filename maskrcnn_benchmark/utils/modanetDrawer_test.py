@@ -132,11 +132,13 @@ class ModaNetDrawerTest(object):
         image_list = image_list.to(self.device)
         # compute predictions
         with torch.no_grad():
-            predictions = self.model(image_list)
+            predictions, features = self.model(image_list)
         predictions = [o.to(self.cpu_device) for o in predictions]
+        print(features.size())
 
         # always single image is passed at a time
         prediction = predictions[0]
+        print(prediction)
 
         # reshape prediction (a BoxList) into the original image size
         height, width = original_image.shape[:-1]

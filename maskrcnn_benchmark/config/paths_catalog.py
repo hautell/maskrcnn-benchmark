@@ -106,11 +106,19 @@ class DatasetCatalog(object):
         },
         "modanet_train_cocostyle": {
             "img_dir": "modanet/images/train",
-            "ann_file": "modanet/annotations/modanet2018_instances_train.json"
+            "ann_file": "modanet/annotations/modanet2018_instances_train_latest.json"
         },
         "modanet_val_cocostyle": {
             "img_dir": "modanet/images/val",
-            "ann_file": "modanet/annotations/modanet2018_instances_val.json"
+            "ann_file": "modanet/annotations/modanet2018_instances_val_latest.json"
+        },
+        "imaterialist_train_cocostyle": {
+            "img_dir": "imaterialist/images/train",
+            "ann_file": "imaterialist/annotations/train_latest.json"
+        },
+        "imaterialist_val_cocostyle": {
+            "img_dir": "imaterialist/images/val",
+            "ann_file": "imaterialist/annotations/val_latest.json"
         }
     }
 

@@ -31,15 +31,15 @@ MODEL:
     SHARE_BOX_FEATURE_EXTRACTOR: False
   MASK_ON: True
 DATASETS:
-  TRAIN: ("modanet_train_cocostyle",)
-  TEST: ("modanet_val_cocostyle",)
+  TRAIN: ("imaterialist_train_cocostyle", "modanet_train_cocostyle")
+  TEST: ("imaterialist_val_cocostyle", "modanet_val_cocostyle")
 DATALOADER:
   SIZE_DIVISIBILITY: 32
 SOLVER:
-  BASE_LR: 0.02
+  BASE_LR: 0.0025
   WEIGHT_DECAY: 0.0001
   STEPS: (25000, 34375)
   MAX_ITER: 37500
-  IMS_PER_BATCH: 16 
+  IMS_PER_BATCH: 2 
 OUTPUT_DIR: '.'
 

@@ -1,6 +1,6 @@
 MODEL:
   META_ARCHITECTURE: "GeneralizedRCNN"
-  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  WEIGHT: "/home/ubuntu/maskrcnn-benchmark/mask_rcnn_R-50-FPN_1x_detectron_no_last_layers.pth"
   BACKBONE:
     CONV_BODY: "R-50-FPN"
   RESNETS:
@@ -31,15 +31,15 @@ MODEL:
     SHARE_BOX_FEATURE_EXTRACTOR: False
   MASK_ON: True
 DATASETS:
-  TRAIN: ("modanet_train_cocostyle",)
-  TEST: ("modanet_val_cocostyle",)
+  TRAIN: ("imaterialist_train_cocostyle", "modanet_train_cocostyle")
+  TEST: ("imaterialist_val_cocostyle", "modanet_val_cocostyle")
 DATALOADER:
   SIZE_DIVISIBILITY: 32
 SOLVER:
   BASE_LR: 0.02
   WEIGHT_DECAY: 0.0001
-  STEPS: (25000, 34375)
-  MAX_ITER: 37500
+  STEPS: (47520,)
+  MAX_ITER: 65000
   IMS_PER_BATCH: 16 
 OUTPUT_DIR: '.'
 
