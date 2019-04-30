@@ -9,12 +9,49 @@ import glob
 import random
 import torch
 import torch.distributed as dist
+import torch.nn as nn
 
 from maskrcnn_benchmark.utils.comm import get_world_size, get_rank, synchronize
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
 from maskrcnn_benchmark.utils.modanetDrawer import ModaNetDrawer
 from tensorboardX import SummaryWriter
 from apex import amp
+
+from maskrcnn_benchmark.utils.siamese_losses import OnlineTripletLoss, MarginLoss
+from maskrcnn_benchmark.utils.siamese_utils import SemihardNegativeTripletSelector, DistanceWeightedTripletSelector
+
+class EmbeddingNet(nn.Module) :
+    def __init__(self):
+        """
+        Arguments:
+            num_classes (int): number of output classes
+            input_size (int): number of channels of the input once it's flattened
+            representation_size (int): size of the intermediate representation
+        """
+        super(EmbeddingNet, self).__init__()
+
+        self.downsample = nn.Sequential(
+            nn.Conv2d(256, 256, kernel_size=(3,3), stride=(2,2), padding=1),
+            nn.ReLU()
+        )
+
+        self.embedding = nn.Sequential(
+            nn.Linear(7*7*256, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 256)
+        )
+
+        self.downsample.cuda()
+        self.embedding.cuda()
+
+    def forward(self, features) :
+        embedding_input = self.downsample(features)
+        embedding_input = embedding_input.view(-1, 7*7*256) # flatten
+        embedding = self.embedding(embedding_input)
+
+        l2norm = torch.norm(embedding, p=2, dim=1, keepdim=True)
+        embedding_l2norm = embedding.div(l2norm.expand_as(embedding))
+        return embedding_l2norm
 
 def reduce_loss_dict(loss_dict):
     """
@@ -58,7 +95,7 @@ def do_train(
     meters = MetricLogger(delimiter="  ")
     max_iter = len(data_loader)
     start_iter = arguments["iteration"]
-    model.train()
+    model.eval() # do not compute losses 
     start_training_time = time.time()
     end = time.time()
     val_loader_iter = iter(data_loader_val)
@@ -66,6 +103,9 @@ def do_train(
 
     writer = SummaryWriter(log_dir=os.path.join(cfg.OUTPUT_DIR, 'logs'))
     drawer = ModaNetDrawer(cfg, model)
+
+    embedding_net = EmbeddingNet()
+
     for iteration, (images, targets, _) in enumerate(data_loader, start_iter):
         data_time = time.time() - end
         iteration = iteration + 1
@@ -74,14 +114,15 @@ def do_train(
         scheduler.step()
 
         images = images.to(device)
-        targets = [target.to(device) for target in targets]
-        loss_dict = model(images, targets)
-        losses = sum(loss for loss in loss_dict.values())
+        detections, features = model(images)
+        embedding = embedding_net(features)
+        from IPython import embed; embed()
+        exit()
 
         # reduce losses over all GPUs for logging purposes
-        loss_dict_reduced = reduce_loss_dict(loss_dict)
-        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
-        meters.update(loss=losses_reduced, **loss_dict_reduced)
+        # loss_dict_reduced = reduce_loss_dict(loss_dict)
+        # losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+        # meters.update(loss=losses_reduced, **loss_dict_reduced)
 
         optimizer.zero_grad()
         # Note: If mixed precision is not used, this ends up doing nothing

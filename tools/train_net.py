@@ -69,7 +69,7 @@ def train(cfg, local_rank, distributed):
         cfg,
         is_train=True,
         is_distributed=distributed,
-        start_iter=arguments["iteration"],
+        start_iter=0,
     )
     # warning: not sure why I need to index here
     data_loader_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)[0]
