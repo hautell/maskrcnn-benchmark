@@ -1,8 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-from . import transforms as T
+from . import transforms as TC
+from . import transforms_retrieval as TR
 
 
-def build_transforms(cfg, is_train=True):
+def build_transforms(cfg, is_train=True, is_retrieval=False):
     if is_train:
         min_size = cfg.INPUT.MIN_SIZE_TRAIN
         max_size = cfg.INPUT.MAX_SIZE_TRAIN
@@ -19,6 +20,9 @@ def build_transforms(cfg, is_train=True):
         contrast = 0.0
         saturation = 0.0
         hue = 0.0
+
+
+    T = TR if is_retrieval else TC
 
     to_bgr255 = cfg.INPUT.TO_BGR255
     normalize_transform = T.Normalize(

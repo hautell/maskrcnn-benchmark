@@ -1,6 +1,42 @@
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+class MatchLoss(nn.Module):
+    """
+    Contrastive loss
+    Takes match predictions of two samples and puts a sigmoid loss on them
+    """
+
+    def __init__(self, weighted_loss=False):
+        super(MatchLoss, self).__init__()
+        self.weighted_loss = weighted_loss
+        self.criterion = nn.BCEWithLogitsLoss(reduction='mean')
+        self.eps = 1e-9
+
+    def forward(self, match_logits, target):
+        '''
+            matches: logits 
+            target : binary values
+        '''
+        if not self.weighted_loss :
+            loss = self.criterion(match_logits, target)
+        else :
+            pos_ix = np.where(target.cpu().numpy() == 1)[0]
+            num_pos = len(pos_ix)
+
+            neg_ix = np.where(target.cpu().numpy() == 0)[0]
+            num_neg = len(neg_ix)
+
+            weights = np.ones((num_pos + num_neg))
+            weights[pos_ix] = num_neg/num_pos
+            weights = weights/np.sum(weights)
+            weights = torch.Tensor(weights).cuda()
+            criterion = nn.BCEWithLogitsLoss(weight=weights, reduction='mean')
+            loss = criterion(match_logits, target)
+        return loss
 
 class ContrastiveLoss(nn.Module):
     """

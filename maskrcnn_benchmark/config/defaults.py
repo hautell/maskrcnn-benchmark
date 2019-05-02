@@ -408,7 +408,7 @@ _C.SOLVER.WARMUP_ITERS = 500
 _C.SOLVER.WARMUP_METHOD = "linear"
 
 _C.SOLVER.CHECKPOINT_PERIOD = 2500
-_C.SOLVER.START_ITER = 0
+_C.SOLVER.START_ITER = -1
 
 # Number of images per batch
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
@@ -441,12 +441,23 @@ _C.PATHS_CATALOG = os.path.join(os.path.dirname(__file__), "paths_catalog.py")
 # ---------------------------------------------------------------------------- #
 
 _C.LOG = CN()
+_C.LOG.EVAL_VAL_EVERY = 20
 _C.LOG.PRINT_EVERY = 20
 _C.LOG.TEST_FOLDER = '/data/runway2shop/all/'
-_C.LOG.SAVE_EVERY = 1000
+_C.LOG.SAVE_PRED_EVERY = 1000
 
-_C.TRAIN = CN()
-_C.TRAIN.EVAL_VAL_EVERY = 20
+_C.RETRIEVAL = CN()
+_C.RETRIEVAL.METHOD = 'match' # match vs embedding 
+
+_C.RETRIEVAL.SIGMOID = CN()
+
+_C.RETRIEVAL.EMBEDDING = CN()
+_C.RETRIEVAL.EMBEDDING.LOSS = 'triplet'
+_C.RETRIEVAL.EMBEDDING.SAMPLER = 'semihard' 
+_C.RETRIEVAL.EMBEDDING.MARGIN = 0.2
+
+# only for margin loss 
+_C.RETRIEVAL.EMBEDDING.BETA = 1.2
 
 # Precision of input, allowable: (float32, float16)
 _C.DTYPE = "float32"

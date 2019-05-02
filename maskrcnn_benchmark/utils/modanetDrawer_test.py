@@ -99,10 +99,9 @@ class ModaNetDrawerTest(object):
                 of the detection properties can be found in the fields of
                 the BoxList via `prediction.fields()`
         """
-        predictions = self.compute_prediction(image)
-        top_predictions = self.select_top_predictions(predictions)
-
-        result = image.copy()
+        predictions, features = self.compute_prediction(image)
+        top_predictions, top_features = self.select_top_predictions(predictions, features)
+        
         # if self.show_mask_heatmaps:
         #     return self.create_mask_montage(result, top_predictions)
         # result = self.overlay_boxes(result, top_predictions)
@@ -112,7 +111,7 @@ class ModaNetDrawerTest(object):
         #     result = self.overlay_keypoints(result, top_predictions)
         # result = self.overlay_class_names(result, top_predictions)
 
-        return result, top_predictions
+        return top_predictions, top_features
 
     def compute_prediction(self, original_image):
         """
@@ -134,6 +133,7 @@ class ModaNetDrawerTest(object):
         with torch.no_grad():
             predictions, features = self.model(image_list)
         predictions = [o.to(self.cpu_device) for o in predictions]
+        features = features.to(self.cpu_device)
 
         # always single image is passed at a time
         prediction = predictions[0]
@@ -149,9 +149,9 @@ class ModaNetDrawerTest(object):
             # always single image is passed at a time
             masks = self.masker([masks], [prediction])[0]
             prediction.add_field("mask", masks)
-        return prediction
+        return prediction, features
 
-    def select_top_predictions(self, predictions):
+    def select_top_predictions(self, predictions, features):
         """
         Select only predictions which have a `score` > self.confidence_threshold,
         and returns the predictions in descending order of score
@@ -168,9 +168,10 @@ class ModaNetDrawerTest(object):
         scores = predictions.get_field("scores")
         keep = torch.nonzero(scores > self.confidence_threshold).squeeze(1)
         predictions = predictions[keep]
+        features = features[keep]
         scores = predictions.get_field("scores")
         _, idx = scores.sort(0, descending=True)
-        return predictions[idx]
+        return predictions[idx], features[idx]
 
     def compute_colors_for_labels(self, labels):
         """

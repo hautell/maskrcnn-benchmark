@@ -18,6 +18,7 @@ from maskrcnn_benchmark.solver import make_optimizer
 from maskrcnn_benchmark.engine.inference import inference
 from maskrcnn_benchmark.engine.trainer import do_train
 from maskrcnn_benchmark.modeling.detector import build_detection_model
+from maskrcnn_benchmark.modeling.retrieval import build_retrieval_model
 from maskrcnn_benchmark.utils.checkpoint import DetectronCheckpointer
 from maskrcnn_benchmark.utils.collect_env import collect_env_info
 from maskrcnn_benchmark.utils.comm import synchronize, get_rank
@@ -38,7 +39,10 @@ def train(cfg, local_rank, distributed):
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
 
-    optimizer = make_optimizer(cfg, model)
+    retrieval_model = build_retrieval_model(cfg)
+    retrieval_model.to(device)
+
+    optimizer = make_optimizer(cfg, model, retrieval_model)
     scheduler = make_lr_scheduler(cfg, optimizer)
 
     # Initialize mixed-precision training
@@ -54,8 +58,7 @@ def train(cfg, local_rank, distributed):
         )
 
     arguments = {}
-    arguments["iteration"] = cfg.SOLVER.START_ITER
-
+    arguments["iteration"] = 0
     output_dir = cfg.OUTPUT_DIR
 
     save_to_disk = get_rank() == 0
@@ -63,19 +66,27 @@ def train(cfg, local_rank, distributed):
         cfg, model, optimizer, scheduler, output_dir, save_to_disk
     )
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
+
     arguments.update(extra_checkpoint_data)
+    arguments["iteration"] = cfg.SOLVER.START_ITER if cfg.SOLVER.START_ITER >= 0 else arguments["iteration"]
 
-
-    # warning: not sure why I need to index here
-    data_loader_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)[0]
+    data_loader = make_data_loader(
+        cfg,
+        is_train=True,
+        is_distributed=distributed,
+        start_iter=arguments["iteration"]
+    )
+    farfetch_val_dl, imaterialist_val_dl = make_data_loader(cfg, is_train=False, is_distributed=distributed)
 
     checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
 
     do_train(
         cfg,
         model,
+        retrieval_model,
         data_loader,
-        data_loader_val,
+        farfetch_val_dl,
+        imaterialist_val_dl,
         optimizer,
         scheduler,
         checkpointer,

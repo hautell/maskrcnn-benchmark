@@ -1,6 +1,7 @@
 import os 
 import torch 
 import json
+import random
 from PIL import Image
 
 class RetrievalDataset(torch.utils.data.Dataset):
@@ -10,17 +11,42 @@ class RetrievalDataset(torch.utils.data.Dataset):
         with open(ann_file, 'r') as f :
             self.anns = json.load(f)
         self.anns = [(pn,category) for pn,category in self.anns.items()]
+        self.anns = self.anns
+        random.shuffle(self.anns)
         self.root = root
         self.transforms = transforms
+
+        self.categories = [
+            "__background",
+            "bag",
+            "belt",
+            "outer",
+            "dress",
+            "sunglasses",
+            "pants",
+            "top",
+            "shorts",
+            "skirt",
+            "headwear",
+            "scarf & tie"
+        ]
+
 
     def __getitem__(self, idx):
 
         product_name = self.anns[idx][0]
-        img1 = Image.open(os.path.join(self.root, product_name + '-0' + '.jpg'))
-        img2 = Image.open(os.path.join(self.root, product_name + '-1' + '.jpg'))
+        try :
+            img1 = Image.open(os.path.join(self.root, product_name + '-0' + '.jpg')).convert('RGB')
+            img2 = Image.open(os.path.join(self.root, product_name + '-1' + '.jpg')).convert('RGB')
+        except :
+            return self.__getitem__(idx+1)
 
-        img1, img2 = self.transforms(img1, img2)
-        return img1, img2, 1
+        img1 = self.transforms(img1)
+        img2 = self.transforms(img2)
+
+        category = self.anns[idx][1]
+        category_id = self.categories.index(category)
+        return img1, img2, category_id
 
         # filter crowd annotations
         # TODO might be better to add an extra field

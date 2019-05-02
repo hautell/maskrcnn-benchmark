@@ -211,10 +211,11 @@ class DistanceWeightedTripletSelector(TripletSelector):
     and return a negative index for that pair
     """
 
-    def __init__(self, margin, cpu=True):
+    def __init__(self, margin, beta, cpu=True):
         super(DistanceWeightedTripletSelector, self).__init__()
         self.cpu = cpu
         self.margin = margin
+        self.beta = beta
 
     def get_triplets(self, embeddings, labels):
         n, d = embeddings.shape
@@ -245,7 +246,7 @@ class DistanceWeightedTripletSelector(TripletSelector):
                 for jix in label_indices :
                     weights_[ix, jix] = 0
 
-            neg_correct_x, neg_correct_y = np.where(np.logical_not(distance_matrix < self.margin))
+            neg_correct_x, neg_correct_y = np.where(np.logical_not(distance_matrix < self.margin + self.beta))
             weights_[torch.LongTensor(list(zip(neg_correct_x, neg_correct_y)))] == 0
 
             weights_ = weights_ / torch.sum(weights_, dim=1, keepdim=True)
